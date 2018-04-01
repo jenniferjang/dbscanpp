@@ -1,0 +1,5 @@
+include setup.py
+include kernelModesCluster.pyx
+include __init__.py
+include mutual_knn.h
+include hausdorff_computation.h
