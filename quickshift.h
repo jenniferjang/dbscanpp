@@ -6,7 +6,7 @@
 using namespace std;
 
 vector<double> _get_densities(int m, int n,
-                   int * X_sampled,
+                              int * X_sampled,
                               double kernel_size,
                               double * distances) {
     /*
@@ -30,6 +30,10 @@ vector<double> _get_densities(int m, int n,
         }
     }
 
+    for (int i = 0; i < m; i++) {
+        cout << densities[i] << ", ";
+    }
+    cout << endl;
     return densities;
 }
 
@@ -37,6 +41,7 @@ void quickshift_cy(int m, int n,
                    double kernel_size,
                    int * X_sampled,
                    double * distances,
+                   double * densities,
                    int * result) {
     /*
         Runs quickshift on subset of the original dataset using
@@ -48,8 +53,8 @@ void quickshift_cy(int m, int n,
         n: Size of original dataset
         kernel_size:
         X_sampled: 
-        distances: m x n distance matrix of pairwise distances 
-                   between sampled points and the entire dataset
+        distances: m x m distance matrix of distances between pairwise
+                   sampled points
         result: Cluster result
 
     */
@@ -57,15 +62,15 @@ void quickshift_cy(int m, int n,
     double closest, dist;
 
     vector<int> old(m), parent(m);
-    vector<double> densities = _get_densities(m, n, X_sampled, kernel_size, distances);
+    //vector<double> densities = _get_densities(m, n, X_sampled, kernel_size, distances);
 
     for (int i = 0; i < m; i++) {
         parent[i] = i;
         closest = DBL_MAX;
         for (int j = 0; j < m; j++) {
-            dist = distances[i * n + X_sampled[j]];
+            dist = distances[i * m + j];
             if (dist <= kernel_size && dist < closest && densities[j] > densities[i]) {
-                closest = distances[X_sampled[i] * n + X_sampled[j]];
+                closest = distances[i * m + j];
                 parent[i] = j;
             }
         }
@@ -79,41 +84,21 @@ void quickshift_cy(int m, int n,
     }
 
     map<int,int> clusters_index;
-    int cnt = 0;
+    int k, cnt = 0;
 
     for (int i = 0; i < m; i++) {
-        if (clusters_index.find(parent[i]) == clusters_index.end()) {
-            clusters_index[parent[i]] = cnt;
+        k = parent[i];
+        if (clusters_index.find(k) == clusters_index.end()) {
+            clusters_index[k] = cnt;
             cnt++;
         } 
-        result[X_sampled[i]] = clusters_index.find(parent[i]) -> second;
+        result[X_sampled[i]] = clusters_index.find(k) -> second;
     }
 
 }
 
-int _find_closest(int i, int m, int n,
-                  int * X_sampled,
-                  double * distances,
-                  int * result) {
-    /*
-        Find the cluster of the closest core point to point i
-    */
-
-    double min_distance = DBL_MAX;
-    int cluster;
-
-    for (int j = 0; j < m; j++) {
-        if (distances[j * n + i] < min_distance) {
-            min_distance = distances[j * n + i];
-            cluster = result[X_sampled[j]];
-        }
-    }
-    return cluster;
-}
-
-void cluster_remaining_cy(int m, int n,
-                          int * X_sampled,
-                          double * distances,
+void cluster_remaining_cy(int n,
+                          int * closest_point,
                           int * result) {
     /*
         Label the remaining points by clustering them with the nearest
@@ -121,19 +106,15 @@ void cluster_remaining_cy(int m, int n,
 
         Parameters
         ----------
-        m: Number of sampled points
         n: Size of original dataset
-        X_sampled: 
-        distances: m x n distance matrix of pairwise distances 
-                   between sampled points and the entire dataset
-        result: Cluster result
+        closest_point: (n, ) array with the index of the closest core point
+        result: (n, ) array of cluster results to be calculated
 
     */
 
     for (int i = 0; i < n; i++) {
         if (result[i] < 0) {
-            result[i] = _find_closest(i, m, n, X_sampled, distances, result);
+            result[i] = result[closest_point[i]];
         }
     }
 }
-
