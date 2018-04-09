@@ -1,1 +1,1 @@
-# CoreSetsMeanshift
+# CoreSets
