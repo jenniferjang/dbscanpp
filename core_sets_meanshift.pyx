@@ -5,6 +5,8 @@ from sklearn.neighbors import KDTree
 from sklearn.neighbors.kde import KernelDensity
 from sklearn.metrics.pairwise import pairwise_distances
 
+from datetime import datetime
+
 
 cdef extern from "quickshift.h":
     void quickshift_cy(int m, int n,
@@ -53,32 +55,50 @@ class CoreSetsMeanshift:
         """
         
         """
+        a = datetime.now()
         X = np.array(X)
         n, d = X.shape
         m = int(self.p * n)
+        b = datetime.now()
+        print "0:", b - a
 
         if m < 1:
           raise ValueError("p is too small, so sampling did not produce any points.")
 
+        a = datetime.now()
         # Find a random subset of m points 
         X_sampled = np.random.choice(np.arange(n, dtype=np.int32), m, replace=False)
         X_sampled.sort()
         X_sampled_pts = X[X_sampled]
         distances = pairwise_distances(X_sampled_pts, X_sampled_pts)
-        
+        b = datetime.now()
+        print "1:", b - a
+
+        a = datetime.now()
         kde = KernelDensity(kernel=self.kernel, bandwidth=self.kernel_size).fit(X)
         densities = kde.score_samples(X_sampled_pts)
+        b = datetime.now()
+        print "2:", b - a
 
+        a = datetime.now()
         result = np.full(n, -1, dtype=np.int32)
         quickshift_np(m, n, self.kernel_size, X_sampled, distances, densities, result)
+        b = datetime.now()
+        print "3:", b - a
 
+        a = datetime.now()
         # Find the closest core point to every data point
         tree = KDTree(X_sampled_pts)
         closest_point = tree.query(X, k=1)[1]
         closest_point = X_sampled[closest_point[:,0]]
+        b = datetime.now()
+        print "4:", b - a
 
+        a = datetime.now()
         # Cluster the remaining points
         cluster_remaining_np(n, closest_point, result)
+        b = datetime.now()
+        print "5:", b - a
 
         return result
 
