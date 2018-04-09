@@ -3,6 +3,7 @@
 #include <cfloat>
 #include <map>
 #include <cmath>
+#include <assert.h> 
 using namespace std;
 
 vector<double> _get_densities(int m, int n,
@@ -51,13 +52,20 @@ void quickshift_cy(int m, int n,
         ----------
         m: Number of sampled points
         n: Size of original dataset
-        kernel_size:
-        X_sampled: 
-        distances: m x m distance matrix of distances between pairwise
+        kernel_size
+        X_sampled: (m, ) array of indices of each sampled point
+        distances: (m, m) distance matrix of distances between pairwise
                    sampled points
-        result: Cluster result
+        densities: (m, ) array of kernel density estimates for each sampled 
+                   point
+        result: (n, ) array of cluster results to be calculated
 
     */
+
+    assert(X_sampled.size() == m);
+    assert(distances.size() == m*m);
+    assert(densities.size() == m);
+    assert(result.size() == m);
 
     double closest, dist;
 
