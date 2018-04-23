@@ -77,7 +77,7 @@ void quickshift_cy(int m, int n,
         closest = DBL_MAX;
         for (int j = 0; j < m; j++) {
             dist = distances[i * m + j];
-            if (dist <= kernel_size && dist < closest && densities[j] > densities[i]) {
+            if (dist <= 2.0*kernel_size && dist < closest && densities[j] > densities[i]) {
                 closest = distances[i * m + j];
                 parent[i] = j;
             }

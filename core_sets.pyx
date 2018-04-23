@@ -1,6 +1,7 @@
 import numpy as np
 cimport numpy as np
 import random
+import math
 from sklearn.neighbors import KDTree
 from sklearn.neighbors.kde import KernelDensity
 from sklearn.metrics.pairwise import pairwise_distances
@@ -76,8 +77,8 @@ class CoreSetsDBSCAN:
         """
         """
         X = np.array(X)
-        n = X.shape[0]
-        m = int(self.p * n)
+        n, d = X.shape
+        m = int(self.p * math.pow(n, d/(d + 4.0)))
 
         if m < 1:
           raise ValueError("p is too small, so sampling did not produce any points.")
@@ -127,7 +128,7 @@ class CoreSetsMeanshift:
         """
         X = np.array(X)
         n, d = X.shape
-        m = int(self.p * n)
+        m = int(self.p * math.pow(n, d/(d + 2.0)))
 
         if m < 1:
           raise ValueError("p is too small, so sampling did not produce any points.")
