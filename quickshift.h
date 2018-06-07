@@ -1,5 +1,5 @@
 #include <vector>
-#include <algo.h>
+#include <algorithm>
 #include <cfloat>
 #include <map>
 #include <cmath>

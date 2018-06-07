@@ -73,20 +73,26 @@ class CoreSetsDBSCAN:
         self.minPts = minPts
 
 
-    def fit_predict(self, X):
+    def fit_predict(self, X, sample=True):
         """
         """
+        from datetime import datetime
+
+        print datetime.now()
         X = np.array(X)
         n, d = X.shape
-        m = int(self.p * math.pow(n, d/(d + 4.0)))
-
-        if m < 1:
-          raise ValueError("p is too small, so sampling did not produce any points.")
+        if sample:
+          m = int(self.p * math.pow(n, d/(d + 4.0)))
+          if m < 1:
+            raise ValueError("p is too small, so sampling did not produce any points.")
+        else:
+          m = int(self.p * n)
 
         # Find a random subset of m points 
         X_sampled = np.random.choice(np.arange(n, dtype=np.int32), m, replace=False)
         X_sampled.sort()
         X_sampled_pts = X[X_sampled]
+        print datetime.now()
 
         # Find the core points and calculate distances between core points and rest of data set
         tree = KDTree(X)
@@ -95,18 +101,22 @@ class CoreSetsDBSCAN:
         c = X_core.shape[0]
         X_core_pts = X[X_core]
         distances = pairwise_distances(X_core_pts, X_core_pts)
+        print datetime.now()
         
         # Cluster the core points
         result = np.full(n, -1, dtype=np.int32)
         DBSCAN_np(c, n, self.eps_density, self.eps_clustering, X_core, distances, result)
+        print datetime.now()
 
         # Find the closest core point to every data point
         tree_core_pts = KDTree(X_core_pts)
         closest_point = tree_core_pts.query(X, k=1)[1]
         closest_point = X_core[closest_point[:,0]]
+        print datetime.now()
 
         # Cluster the remaining points
         cluster_remaining_np(n, closest_point, result)
+        print datetime.now()
 
         return result 
 
@@ -128,7 +138,7 @@ class CoreSetsMeanshift:
         """
         X = np.array(X)
         n, d = X.shape
-        m = int(self.p * math.pow(n, d/(d + 2.0)))
+        m = int(self.p * math.pow(n, d/(d + 4.0)))
 
         if m < 1:
           raise ValueError("p is too small, so sampling did not produce any points.")
