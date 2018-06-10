@@ -5,14 +5,31 @@
 #include <map>
 #include <iostream>
 #include <assert.h> 
+#include <algorithm>
+#include <time.h>
 using namespace std;
+
+
+// Get current date/time, format is YYYY-MM-DD.HH:mm:ss
+const std::string currentDateTime() {
+    time_t     now = time(0);
+    struct tm  tstruct;
+    char       buf[80];
+    tstruct = *localtime(&now);
+    // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
+    // for more information about date/time format
+    strftime(buf, sizeof(buf), "%Y-%m-%d.%X", &tstruct);
+
+    return buf;
+}
 
 
 void DBSCAN_cy(int c, int n,
                double eps_density,
                double eps_clustering,
                int * X_core,
-               double * distances,
+               int * neighbors,
+               int * neighbors_ind,
                int * result) {
     /*
         Cluster the core points using density-based methods
@@ -27,52 +44,51 @@ void DBSCAN_cy(int c, int n,
                         breadth-first search 
         minPts: Minimum number of neighbors to be considered core point
         X_core: (c, ) array of the indices of the core points
-        distances: (c, c) distance matrix of distances between pairwise
-                   core points
+        neighbors: array of indices to each neighbor within eps_clustering
+                   distance for all core points
+        neighbors_ind: (c, ) number of neighbors for each core point, to
+                       be used for indexing into neighbors array
         result: (n, ) array of cluster results to be calculated
     */
 
     // these literally don't work?
+    cout << currentDateTime() << endl;
     assert(X_core.size() == c);
-    assert(distances.size() == c * n);
+    assert(neighbors_ind.size() == c);
     assert(result.size() == n);
 
     set<int> seen;
     queue<int> q = queue<int>();
-    int point;
-    double distance;
+    int neighbor, start_ind, end_ind, point, cnt = 0;
+    cout << currentDateTime() << endl;
 
     for (int i = 0; i < c; i++) {
         q = queue<int>();
-        if (seen.find(i) == seen.end()) {
+        if (result[X_core[i]] == -1 && seen.find(i) == seen.end()) {
             q.push(i);
-        }
 
-        while (!q.empty()) {
-            point = q.front();
-            q.pop();
-            for (int j = 0; j < c; j++) {
-                distance = distances[point * c + j];
-                if (distance <= eps_clustering && seen.find(j) == seen.end()) {
-                    q.push(j);
-                    result[X_core[j]] = i;
+            while (!q.empty()) {
+                point = q.front();
+                q.pop();
+
+                start_ind = 0;
+                if (point != 0) {
+                    start_ind = neighbors_ind[point - 1];
                 }
+                end_ind = neighbors_ind[point];
+
+                for (int j = start_ind; j < end_ind; j++) {
+                    neighbor = neighbors[j];
+                    if (seen.find(neighbor) == seen.end()) {
+                        q.push(neighbor);
+                        result[X_core[neighbor]] = cnt;
+                    }
+                }
+                seen.insert(point);
             }
-            seen.insert(point);
+
+            cnt ++;
         }
     }
-
-    map<int,int> clusters_index;
-    int k, cnt = 0;
-
-    for (int i = 0; i < c; i++) {
-        k = X_core[i];
-        if (result[k] >= 0) {
-            if (clusters_index.find(result[k]) == clusters_index.end()) {
-                clusters_index[result[k]] = cnt;
-                cnt++;
-            } 
-            result[k] = clusters_index.find(result[k]) -> second;
-        }
-    }
+    cout << currentDateTime() << endl;
 }
