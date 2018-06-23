@@ -30,11 +30,6 @@ vector<double> _get_densities(int m, int n,
             }
         }
     }
-
-    for (int i = 0; i < m; i++) {
-        cout << densities[i] << ", ";
-    }
-    cout << endl;
     return densities;
 }
 

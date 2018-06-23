@@ -4,8 +4,24 @@ import random
 import math
 from sklearn.neighbors import KDTree
 from sklearn.neighbors.kde import KernelDensity
-from sklearn.metrics.pairwise import pairwise_distances
+from sklearn.metrics.pairwise import pairwise_distances, euclidean_distances
 from datetime import datetime
+
+cdef extern from "k_init.h":
+    void k_init_cy(int m, int n,
+                   double * distances,
+                   double * closest_dist_sq,
+                   int * result)
+
+
+cdef k_init_np(m, n, 
+               np.ndarray[double,  ndim=2, mode="c"] distances,
+               np.ndarray[double, ndim=1, mode="c"] closest_dist_sq,
+               np.ndarray[np.int32_t, ndim=1, mode="c"] result):
+    k_init_cy(m, n, 
+              <double *> np.PyArray_DATA(distances),
+              <double *> np.PyArray_DATA(closest_dist_sq),
+              <int *> np.PyArray_DATA(result))
 
 cdef extern from "DBSCAN.h":
     void DBSCAN_cy(int c, int n,
@@ -76,24 +92,103 @@ class CoreSetsDBSCAN:
         self.eps_clustering = eps_clustering
         self.minPts = minPts
 
+    def k_init(self, X, m):
+      n, d = X.shape
 
-    def fit_predict(self, X, sample=True):
+      indices = np.empty(m, dtype=np.int32)
+      closest_dist_sq = np.empty(n, dtype=np.float64)
+      distances = euclidean_distances(X, squared=True)
+
+      k_init_np(m,
+                n,
+                distances,
+                closest_dist_sq,
+                indices)
+
+      return indices
+
+    def k_init2(self, X, m):
+        n_samples, n_features = X.shape
+
+        centers = np.empty((m, n_features), dtype=X.dtype)
+        indices = np.empty(m, dtype=np.int32)
+
+        x_squared_norms = np.einsum('ij,ij->i', X, X)
+
+        n_local_trials = 1 #2 + int(np.log(m))
+
+        # Pick first center randomly
+        center_id = np.random.randint(n_samples)
+        centers[0] = X[center_id]
+        indices[0] = center_id
+
+        # Initialize list of closest distances and calculate current potential
+        closest_dist_sq = euclidean_distances(
+            centers[0, np.newaxis], X, Y_norm_squared=x_squared_norms,
+            squared=True)
+        current_pot = closest_dist_sq.sum()
+
+        # Pick the remaining m-1 points
+        for c in range(1, m):
+            # Choose center candidates by sampling with probability proportional
+            # to the squared distance to the closest existing center
+            rand_vals = np.random.random_sample(n_local_trials) * current_pot
+            candidate_ids = np.searchsorted(np.cumsum(closest_dist_sq),
+                                            rand_vals)
+
+            # Compute distances to center candidates
+            distance_to_candidates = euclidean_distances(
+                X[candidate_ids], X, Y_norm_squared=x_squared_norms, squared=True)
+
+            # Decide which candidate is the best
+            best_candidate = None
+            best_pot = None
+            best_dist_sq = None
+            for trial in range(n_local_trials):
+                # Compute potential when including center candidate
+                new_dist_sq = np.minimum(closest_dist_sq,
+                                         distance_to_candidates[trial])
+                new_pot = new_dist_sq.sum()
+
+                # Store result if it is the best local trial so far
+                if (best_candidate is None) or (new_pot < best_pot):
+                    best_candidate = candidate_ids[trial]
+                    best_pot = new_pot
+                    best_dist_sq = new_dist_sq
+
+            # Permanently add best center candidate found in local tries
+            centers[c] = X[best_candidate]
+            indices[c] = best_candidate
+            current_pot = best_pot
+            closest_dist_sq = best_dist_sq
+
+        return indices
+
+    def fit_predict(self, X, sample=True, init="k-means++", technique="exponential"):
         """
         """
 
         X = np.array(X)
         n, d = X.shape
         if sample:
-          m = int(self.p * math.pow(n, d/(d + 4.0)))
+          if technique == "exponential":
+            m = int(self.p * math.pow(n, d/(d + 4.0)))
+          elif technique == "linear":
+            m = int(self.p * n)
+          else:
+            raise ValueError("Technique %s is not defined." % technique)
           if m < 1: 
             raise ValueError("p is too small, so sampling did not produce any points.")
-        else:
-          m = int(self.p * n)
 
-        # Find a random subset of m points 
-        X_sampled = np.random.choice(np.arange(n, dtype=np.int32), m, replace=False)
-        X_sampled.sort()
-        X_sampled_pts = X[X_sampled]
+          # Find a random subset of m points 
+          if init == "k-means++":
+            X_sampled = self.k_init(X, m)
+          else:
+            X_sampled = np.random.choice(np.arange(n, dtype=np.int32), m, replace=False)
+          X_sampled_pts = X[X_sampled]
+        else:
+          X_sampled = np.arange(n, dtype=np.int32)
+          X_sampled_pts = X
 
         # Find the core points
         radii = KDTree(X).query(X_sampled_pts, k=self.minPts)[0]
@@ -126,7 +221,7 @@ class CoreSetsDBSCAN:
         # Cluster the remaining points
         cluster_remaining_np(n, closest, result)
 
-        return result 
+        return result
 
 
 class CoreSetsMeanshift:

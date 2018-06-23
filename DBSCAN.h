@@ -3,7 +3,6 @@
 #include <queue>
 #include <cfloat>
 #include <map>
-#include <iostream>
 #include <assert.h> 
 #include <algorithm>
 #include <time.h>
@@ -52,19 +51,16 @@ void DBSCAN_cy(int c, int n,
     */
 
     // these literally don't work?
-    cout << currentDateTime() << endl;
     assert(X_core.size() == c);
     assert(neighbors_ind.size() == c);
     assert(result.size() == n);
 
-    set<int> seen;
     queue<int> q = queue<int>();
     int neighbor, start_ind, end_ind, point, cnt = 0;
-    cout << currentDateTime() << endl;
 
     for (int i = 0; i < c; i++) {
         q = queue<int>();
-        if (result[X_core[i]] == -1 && seen.find(i) == seen.end()) {
+        if (result[X_core[i]] == -1) {
             q.push(i);
 
             while (!q.empty()) {
@@ -79,16 +75,14 @@ void DBSCAN_cy(int c, int n,
 
                 for (int j = start_ind; j < end_ind; j++) {
                     neighbor = neighbors[j];
-                    if (seen.find(neighbor) == seen.end()) {
+                    if (result[X_core[neighbor]] == -1) {
                         q.push(neighbor);
                         result[X_core[neighbor]] = cnt;
                     }
                 }
-                seen.insert(point);
             }
 
             cnt ++;
         }
     }
-    cout << currentDateTime() << endl;
 }
