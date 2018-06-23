@@ -107,63 +107,6 @@ class CoreSetsDBSCAN:
 
       return indices
 
-    def k_init2(self, X, m):
-        n_samples, n_features = X.shape
-
-        centers = np.empty((m, n_features), dtype=X.dtype)
-        indices = np.empty(m, dtype=np.int32)
-
-        x_squared_norms = np.einsum('ij,ij->i', X, X)
-
-        n_local_trials = 1 #2 + int(np.log(m))
-
-        # Pick first center randomly
-        center_id = np.random.randint(n_samples)
-        centers[0] = X[center_id]
-        indices[0] = center_id
-
-        # Initialize list of closest distances and calculate current potential
-        closest_dist_sq = euclidean_distances(
-            centers[0, np.newaxis], X, Y_norm_squared=x_squared_norms,
-            squared=True)
-        current_pot = closest_dist_sq.sum()
-
-        # Pick the remaining m-1 points
-        for c in range(1, m):
-            # Choose center candidates by sampling with probability proportional
-            # to the squared distance to the closest existing center
-            rand_vals = np.random.random_sample(n_local_trials) * current_pot
-            candidate_ids = np.searchsorted(np.cumsum(closest_dist_sq),
-                                            rand_vals)
-
-            # Compute distances to center candidates
-            distance_to_candidates = euclidean_distances(
-                X[candidate_ids], X, Y_norm_squared=x_squared_norms, squared=True)
-
-            # Decide which candidate is the best
-            best_candidate = None
-            best_pot = None
-            best_dist_sq = None
-            for trial in range(n_local_trials):
-                # Compute potential when including center candidate
-                new_dist_sq = np.minimum(closest_dist_sq,
-                                         distance_to_candidates[trial])
-                new_pot = new_dist_sq.sum()
-
-                # Store result if it is the best local trial so far
-                if (best_candidate is None) or (new_pot < best_pot):
-                    best_candidate = candidate_ids[trial]
-                    best_pot = new_pot
-                    best_dist_sq = new_dist_sq
-
-            # Permanently add best center candidate found in local tries
-            centers[c] = X[best_candidate]
-            indices[c] = best_candidate
-            current_pot = best_pot
-            closest_dist_sq = best_dist_sq
-
-        return indices
-
     def fit_predict(self, X, sample=True, init="k-means++", technique="exponential"):
         """
         """
