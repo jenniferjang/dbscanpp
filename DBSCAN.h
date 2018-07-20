@@ -5,27 +5,10 @@
 #include <map>
 #include <assert.h> 
 #include <algorithm>
-#include <time.h>
 using namespace std;
 
 
-// Get current date/time, format is YYYY-MM-DD.HH:mm:ss
-const std::string currentDateTime() {
-    time_t     now = time(0);
-    struct tm  tstruct;
-    char       buf[80];
-    tstruct = *localtime(&now);
-    // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
-    // for more information about date/time format
-    strftime(buf, sizeof(buf), "%Y-%m-%d.%X", &tstruct);
-
-    return buf;
-}
-
-
 void DBSCAN_cy(int c, int n,
-               double eps_density,
-               double eps_clustering,
                int * X_core,
                int * neighbors,
                int * neighbors_ind,
@@ -37,10 +20,6 @@ void DBSCAN_cy(int c, int n,
         ----------
         c: Number of core points
         n: Size of original dataset
-        eps_density: Minimum distance to be considered neighbors for
-                     determining core points
-        eps_clustering: Minimum distance to be considered a child for
-                        breadth-first search 
         minPts: Minimum number of neighbors to be considered core point
         X_core: (c, ) array of the indices of the core points
         neighbors: array of indices to each neighbor within eps_clustering

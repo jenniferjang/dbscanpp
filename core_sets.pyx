@@ -8,37 +8,35 @@ from sklearn.metrics.pairwise import pairwise_distances, euclidean_distances
 from datetime import datetime
 
 cdef extern from "k_init.h":
-    void k_init_cy(int m, int n,
-                   double * distances,
-                   double * closest_dist_sq,
-                   int * result)
+    void k_init_cy2(int m, int n, int d,
+                      double * X,
+                      double * closest_dist_sq,
+                      int * result)
 
 
-cdef k_init_np(m, n, 
-               np.ndarray[double,  ndim=2, mode="c"] distances,
-               np.ndarray[double, ndim=1, mode="c"] closest_dist_sq,
-               np.ndarray[np.int32_t, ndim=1, mode="c"] result):
-    k_init_cy(m, n, 
-              <double *> np.PyArray_DATA(distances),
-              <double *> np.PyArray_DATA(closest_dist_sq),
-              <int *> np.PyArray_DATA(result))
+cdef k_centers_np(m, n, d,
+                  np.ndarray[double,  ndim=2, mode="c"] X,
+                  np.ndarray[double, ndim=1, mode="c"] closest_dist_sq,
+                  np.ndarray[np.int32_t, ndim=1, mode="c"] result):
+    k_init_cy2(m, n, d,
+                 <double *> np.PyArray_DATA(X),
+                 <double *> np.PyArray_DATA(closest_dist_sq),
+                 <int *> np.PyArray_DATA(result))
 
 cdef extern from "DBSCAN.h":
     void DBSCAN_cy(int c, int n,
-                   double eps_density,
-                   double eps_clustering,
                    int * X_core,
                    int * neighbors,
                    int * neighbors_ind,
                    int * result)
 
 
-cdef DBSCAN_np(c, n, eps_density, eps_clustering,
+cdef DBSCAN_np(c, n,
                np.ndarray[int,  ndim=1, mode="c"] X_core,
                np.ndarray[int, ndim=1, mode="c"] neighbors,
                np.ndarray[int, ndim=1, mode="c"] neighbors_ind,
                np.ndarray[np.int32_t, ndim=1, mode="c"] result):
-    DBSCAN_cy(c, n, eps_density, eps_clustering,
+    DBSCAN_cy(c, n,
               <int *> np.PyArray_DATA(X_core),
               <int *> np.PyArray_DATA(neighbors),
               <int *> np.PyArray_DATA(neighbors_ind),
@@ -92,18 +90,16 @@ class CoreSetsDBSCAN:
         self.eps_clustering = eps_clustering
         self.minPts = minPts
 
-    def k_init(self, X, m):
+    def k_centers(self, m, n, d, X):
       n, d = X.shape
 
       indices = np.empty(m, dtype=np.int32)
       closest_dist_sq = np.empty(n, dtype=np.float64)
-      distances = euclidean_distances(X, squared=True)
 
-      k_init_np(m,
-                n,
-                distances,
-                closest_dist_sq,
-                indices)
+      k_centers_np(m, n, d,
+                   X,
+                   closest_dist_sq,
+                   indices)
 
       return indices
 
@@ -111,7 +107,7 @@ class CoreSetsDBSCAN:
         """
         """
 
-        X = np.array(X)
+        X = np.ascontiguousarray(X)
         n, d = X.shape
         if sample:
           if technique == "exponential":
@@ -125,7 +121,7 @@ class CoreSetsDBSCAN:
 
           # Find a random subset of m points 
           if init == "k-means++":
-            X_sampled = self.k_init(X, m)
+            X_sampled = self.k_centers(m, n, d, X)
           else:
             X_sampled = np.random.choice(np.arange(n, dtype=np.int32), m, replace=False)
           X_sampled_pts = X[X_sampled]
@@ -140,9 +136,11 @@ class CoreSetsDBSCAN:
 
         # Get the list of core neighbors for each core point
         core_pts_tree = KDTree(X_core_pts)
-        neighbors = core_pts_tree.query_radius(X_core_pts, self.eps_clustering)
+        eps_clustering = self.eps_clustering
+
+        neighbors = core_pts_tree.query_radius(X_core_pts, eps_clustering)
         neighbors = np.asarray(np.concatenate(neighbors), dtype=np.int32)
-        neighbors_ct = core_pts_tree.query_radius(X_core_pts, self.eps_clustering, count_only=True)
+        neighbors_ct = core_pts_tree.query_radius(X_core_pts, eps_clustering, count_only=True)
         neighbors_ind = np.cumsum(neighbors_ct, dtype=np.int32)
         
         # Cluster the core points
@@ -150,8 +148,6 @@ class CoreSetsDBSCAN:
         result = np.full(n, -1, dtype=np.int32)
         DBSCAN_np(c,
                   n,
-                  self.eps_density, 
-                  self.eps_clustering, 
                   X_core,
                   neighbors,
                   neighbors_ind,
@@ -159,7 +155,7 @@ class CoreSetsDBSCAN:
 
         # Find the closest core point to every data point
         closest_core_pts = core_pts_tree.query(X, k=1)[1]
-        closest = X_core[closest_core_pts[:,0]] 
+        closest = X_core[closest_core_pts[:,0]]
 
         # Cluster the remaining points
         cluster_remaining_np(n, closest, result)
