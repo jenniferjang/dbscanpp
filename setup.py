@@ -4,11 +4,11 @@ from Cython.Distutils import build_ext
 
 
 setup(
-    name='CoreSets',
+    name='DBSCANPP',
     version='1.0',
     cmdclass={'build_ext': build_ext},
-    ext_modules=[Extension("CoreSets",
-                 sources=["core_sets.pyx"],
+    ext_modules=[Extension("DBSANPP",
+                 sources=["dbscanpp.pyx"],
                  language="c++",
                  include_dirs=[numpy.get_include()])],
     author='Jennifer Jang',
