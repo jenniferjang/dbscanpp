@@ -7,7 +7,7 @@ setup(
     name='DBSCANPP',
     version='1.0',
     cmdclass={'build_ext': build_ext},
-    ext_modules=[Extension("DBSANPP",
+    ext_modules=[Extension("DBSCANPP",
                  sources=["dbscanpp.pyx"],
                  language="c++",
                  include_dirs=[numpy.get_include()])],
