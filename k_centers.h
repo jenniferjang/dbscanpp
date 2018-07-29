@@ -1,4 +1,3 @@
-#include <random>
 #include <iterator>
 #include <iostream>
 #include <time.h>
@@ -17,7 +16,7 @@ double sq_euclidean_distance(int d, int i, int j, double * X) {
         j: index of second point in X
         X: (m, d) dataset
     */
-    
+
     double distance = 0;
     for (int k = 0; k < d; k++) {
         distance += pow(X[i * d + k] - X[j * d + k], 2);
@@ -47,8 +46,8 @@ void k_centers_cy(int m, int n, int d,
     assert(closest_dist_sq.size() == n);
     assert(result.size() == m);
 
-    // Pick first center randomly
-    int center_id = rand() % n;
+    // Pick the first point
+    int center_id = 0;
     result[0] = center_id;
 
     // Initialize list of closest distances and calculate current potential

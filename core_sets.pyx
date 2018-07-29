@@ -5,7 +5,7 @@ import math
 from sklearn.neighbors import KDTree
 from datetime import datetime
 
-cdef extern from "k_centers_cy.h":
+cdef extern from "k_centers.h":
     void k_centers_cy(int m, int n, int d,
                       double * X,
                       double * closest_dist_sq,

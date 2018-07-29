@@ -10,7 +10,7 @@ using namespace std;
 
 void DBSCAN_cy(int c, int n,
                int * X_core,
-               int * neighbors_pts,
+               int * neighbors,
                int * num_neighbors,
                int * result) {
     /*
