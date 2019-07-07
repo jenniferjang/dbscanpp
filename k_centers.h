@@ -1,6 +1,5 @@
 #include <iterator>
-#include <iostream>
-#include <time.h>
+#include <algorithm>
 
 using namespace std;
 
@@ -41,10 +40,6 @@ void k_centers_cy(int m, int n, int d,
                          distance to any points selected thus far
         result: (m, ) indices of the m selected points in X
     */
-
-    assert(X.size() == n * d);
-    assert(closest_dist_sq.size() == n);
-    assert(result.size() == m);
 
     // Pick the first point
     int center_id = 0;

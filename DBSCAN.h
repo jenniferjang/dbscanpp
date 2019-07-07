@@ -1,10 +1,5 @@
-#include <vector>
-#include <set>
 #include <queue>
-#include <cfloat>
-#include <map>
-#include <assert.h> 
-#include <algorithm>
+
 using namespace std;
 
 
@@ -27,11 +22,6 @@ void DBSCAN_cy(int c, int n,
                        be used for indexing into neighbors array
         result: (n, ) array of cluster results to be calculated
     */
-
-    // these literally don't work?
-    assert(X_core.size() == c);
-    assert(num_neighbors.size() == c);
-    assert(result.size() == n);
 
     queue<int> q = queue<int>();
     int neighbor, start_ind, end_ind, point, cnt = 0;
