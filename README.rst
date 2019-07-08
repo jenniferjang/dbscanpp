@@ -1,6 +1,6 @@
 DBSCAN++
 =====
-Fast and more robust density-based clustering algorithm.
+Fast and robust density-based clustering algorithm.
 
 
 Usage
@@ -12,7 +12,7 @@ Usage
 
   DBSCANPP(p, eps_density, eps_clustering, minPts)
   
-p: The sample fraction, which determines m, the number of points to sample
+p: The sample fraction, which determines the number of points to sample
 
 eps_density: Radius for determining core points; points that have greater than minPts in its eps_density-radii ball will be considered core points
 
