@@ -24,11 +24,11 @@ minPts: Number of neighbors required for a point to be labeled a core point. Wor
 
 .. code-block:: python
 
-  fit_predict(X, init="k-centers", cluster_outliers=True)
+  fit_predict(X, init="k-center", cluster_outliers=True)
   
 X: Data matrix. Each row should represent a datapoint in Euclidean space
 
-init: String. Either "k-centers" for the k-centers greedy sampling technique or "uniform" for a uniform random sampling technique
+init: String. Either "k-center" for the k-center greedy sampling technique or "uniform" for a uniform random sampling technique
 
 cluster_outliers: Boolean. Whether we should cluster the remaining points
 
@@ -51,7 +51,7 @@ fit_predict performs the clustering and returns the cluster labels.
 
   # Declare a DBSCAN++ model with tuning hyperparameters
   dbscanpp = DBSCANPP(p=0.1, eps_density=5.0, eps_clustering=5.0, minPts=10)
-  y_hat = dbscanpp.fit_predict(X, init="k-centers")
+  y_hat = dbscanpp.fit_predict(X, init="k-center")
 
   # Score the clustering
   from sklearn.metrics.cluster import adjusted_rand_score, adjusted_mutual_info_score
