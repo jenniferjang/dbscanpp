@@ -14,13 +14,11 @@ Usage
   
 p: The sample fraction, which determines m, the number of points to sample
 
-eps_density: Radius for determining core points; points that have greater than
-             minPts in its eps_density-radii ball will be considered core points
+eps_density: Radius for determining core points; points that have greater than minPts in its eps_density-radii ball will be considered core points
 
 eps_clustering: Radius for determining neighbors and edges in the density graph
 
-minPts: Number of neighbors required for a point to be labeled a core point. Works
-        in conjunction with eps_density
+minPts: Number of neighbors required for a point to be labeled a core point. Works in conjunction with eps_density
 
 **Finding Clusters**:
 
@@ -30,8 +28,7 @@ minPts: Number of neighbors required for a point to be labeled a core point. Wor
   
 X: Data matrix. Each row should represent a datapoint in Euclidean space
 
-init: String. Either "k-centers" for the k-centers greedy sampling technique or "uniform" 
-      for a uniform random sampling technique
+init: String. Either "k-centers" for the k-centers greedy sampling technique or "uniform" for a uniform random sampling technique
 
 cluster_outliers: Boolean. Whether we should cluster the remaining points
 
