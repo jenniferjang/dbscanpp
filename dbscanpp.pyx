@@ -106,7 +106,7 @@ class DBSCANPP:
 
       return indices
 
-    def fit_predict(self, X, init="k-center", cluster_outliers=True):
+    def fit_predict(self, X, init="k-centers", cluster_outliers=True):
         """
         Determines the clusters in three steps.
         First step is to sample points from X using either the
@@ -119,7 +119,7 @@ class DBSCANPP:
         ----------
         X: Data matrix. Each row should represent a datapoint in 
            Euclidean space
-        init: String. Either "k-center" for the K-center greedy
+        init: String. Either "k-centers" for the K-center greedy
               sampling technique or "uniform" for a uniform random
               sampling technique
         cluster_outliers: Boolean. Whether we should cluster the 
